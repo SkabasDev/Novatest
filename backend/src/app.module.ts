@@ -4,6 +4,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_GUARD } from '@nestjs/core';
 import { validateEnv } from './config/env.validation';
+import { AuthModule } from './modules/auth/auth.module';
 import { CustomerModule } from './modules/customer/customer.module';
 import { DeliveryModule } from './modules/delivery/delivery.module';
 import { ProductModule } from './modules/product/product.module';
@@ -26,6 +27,7 @@ import { TransactionModule } from './modules/transaction/transaction.module';
         synchronize: config.get<string>('NODE_ENV') !== 'production',
       }),
     }),
+    AuthModule,
     ProductModule,
     CustomerModule,
     DeliveryModule,

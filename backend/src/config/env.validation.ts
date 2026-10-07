@@ -1,5 +1,5 @@
 import { plainToInstance } from 'class-transformer';
-import { IsIn, IsInt, IsNotEmpty, IsOptional, IsUrl, validateSync } from 'class-validator';
+import { IsIn, IsInt, IsNotEmpty, IsOptional, IsUrl, Length, validateSync } from 'class-validator';
 
 class EnvironmentVariables {
   @IsOptional()
@@ -38,6 +38,14 @@ class EnvironmentVariables {
 
   @IsInt()
   BASE_FEE_IN_CENTS = 350000;
+
+  @IsNotEmpty()
+  @Length(32, 256)
+  JWT_SECRET!: string;
+
+  @IsOptional()
+  @IsNotEmpty()
+  JWT_EXPIRES_IN = '2h';
 }
 
 /** Fails fast at boot time if required env vars are missing or malformed. */
