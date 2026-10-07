@@ -40,6 +40,15 @@ export default {
       },
       transitionTimingFunction: { out: 'cubic-bezier(.2,.7,.3,1)' },
       transitionDuration: { fast: '120ms', DEFAULT: '200ms', slow: '360ms' },
+      keyframes: {
+        slide: {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(250%)' },
+        },
+      },
+      animation: {
+        slide: 'slide 1.1s linear infinite',
+      },
     },
   },
   plugins: [],
