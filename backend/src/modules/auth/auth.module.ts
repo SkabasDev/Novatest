@@ -11,6 +11,7 @@ import { RegisterUserUseCase } from './application/use-cases/register-user.use-c
 import { SaveDefaultDeliveryUseCase } from './application/use-cases/save-default-delivery.use-case';
 import { AuthController } from './infrastructure/http/auth.controller';
 import { AuthGuard } from './infrastructure/http/auth.guard';
+import { OptionalAuthGuard } from './infrastructure/http/optional-auth.guard';
 import { BcryptPasswordHasherAdapter } from './infrastructure/security/bcrypt-password-hasher.adapter';
 import { JwtTokenServiceAdapter } from './infrastructure/security/jwt-token-service.adapter';
 import { UserOrmEntity } from './infrastructure/persistence/user.orm-entity';
@@ -38,7 +39,8 @@ import { UserTypeOrmRepository } from './infrastructure/persistence/user.typeorm
     GetProfileUseCase,
     SaveDefaultDeliveryUseCase,
     AuthGuard,
+    OptionalAuthGuard,
   ],
-  exports: [AuthGuard, SaveDefaultDeliveryUseCase, GetProfileUseCase],
+  exports: [AuthGuard, OptionalAuthGuard, SaveDefaultDeliveryUseCase, GetProfileUseCase],
 })
 export class AuthModule {}
