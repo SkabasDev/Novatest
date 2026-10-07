@@ -3,6 +3,7 @@ import { FLUSH, PAUSE, PERSIST, PURGE, REGISTER, REHYDRATE, persistReducer, pers
 import storage from 'redux-persist/lib/storage';
 import authReducer from '../features/auth/authSlice';
 import checkoutReducer from '../features/checkout/checkoutSlice';
+import navigationReducer from '../features/navigation/navigationSlice';
 import productReducer from '../features/product/productSlice';
 
 /**
@@ -13,6 +14,7 @@ const rootReducer = combineReducers({
   product: productReducer,
   checkout: checkoutReducer,
   auth: authReducer,
+  navigation: navigationReducer,
 });
 
 const persistConfig = {

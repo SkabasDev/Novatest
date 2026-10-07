@@ -3,14 +3,22 @@ import { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '../../../app/hooks';
 import { Button } from '../../../shared/ui/Button';
 import { formatCurrency } from '../../../shared/utils/formatCurrency';
-import { startCheckout, setQuantity } from '../../checkout/checkoutSlice';
+import { setQuantity } from '../../checkout/checkoutSlice';
 import { fetchProducts } from '../productSlice';
 import { QuantityStepper } from './QuantityStepper';
 
-export function ProductPage() {
+interface DetailScreenProps {
+  productId: string;
+  onBack: () => void;
+  onPay: () => void;
+}
+
+/** Product detail, parametrized by id — replaces the single-product vitrine (spec §11.4). */
+export function DetailScreen({ productId, onBack, onPay }: DetailScreenProps) {
   const dispatch = useAppDispatch();
   const { items, status, error } = useAppSelector((state) => state.product);
   const quantity = useAppSelector((state) => state.checkout.quantity);
+  const isAuthenticated = useAppSelector((state) => Boolean(state.auth.user));
 
   useEffect(() => {
     // Guarded on 'idle' so remounting after checkout (back to the product screen) doesn't
@@ -26,10 +34,10 @@ export function ProductPage() {
     return <p className="p-6 text-center text-danger">{error}</p>;
   }
 
-  const product = items[0];
+  const product = items.find((item) => item.id === productId);
 
   if (!product) {
-    return <p className="p-6 text-center text-fg-3">No hay productos disponibles.</p>;
+    return <p className="p-6 text-center text-fg-3">No encontramos este producto.</p>;
   }
 
   const isSoldOut = product.stock === 0;
@@ -37,6 +45,10 @@ export function ProductPage() {
 
   return (
     <div className="mx-auto flex max-w-page flex-col gap-4 px-4 py-6 pb-28 md:flex-row md:flex-wrap md:gap-10 md:pb-6">
+      <button type="button" onClick={onBack} className="min-h-11 self-start text-[14px] font-medium text-primary md:basis-full">
+        ‹ Productos
+      </button>
+
       <div className="flex-1 basis-80">
         <img
           src={product.imageUrl}
@@ -98,16 +110,22 @@ export function ProductPage() {
         </div>
 
         <div className="hidden md:mt-auto md:block">
-          <Button onClick={() => dispatch(startCheckout(product.id))} disabled={isSoldOut}>
+          <Button onClick={onPay} disabled={isSoldOut}>
             {isSoldOut ? 'Agotado' : 'Pagar con tarjeta de crédito'}
           </Button>
+          {!isAuthenticated && !isSoldOut && (
+            <p className="mt-2 text-[13px] text-fg-3">Te pediremos iniciar sesión antes de pagar.</p>
+          )}
         </div>
       </div>
 
       <div className="safe-bottom fixed inset-x-0 bottom-0 z-20 border-t border-line bg-base p-3 md:hidden">
-        <Button onClick={() => dispatch(startCheckout(product.id))} disabled={isSoldOut}>
+        <Button onClick={onPay} disabled={isSoldOut}>
           {isSoldOut ? 'Agotado' : 'Pagar con tarjeta de crédito'}
         </Button>
+        {!isAuthenticated && !isSoldOut && (
+          <p className="mt-2 text-center text-[13px] text-fg-3">Te pediremos iniciar sesión antes de pagar.</p>
+        )}
       </div>
     </div>
   );

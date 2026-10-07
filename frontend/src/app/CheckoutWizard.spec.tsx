@@ -3,19 +3,39 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Provider } from 'react-redux';
 import { CheckoutWizard } from './CheckoutWizard';
+import authReducer from '../features/auth/authSlice';
+import { authApi } from '../features/auth/authApi';
 import checkoutReducer from '../features/checkout/checkoutSlice';
+import navigationReducer from '../features/navigation/navigationSlice';
 import { productApi } from '../features/product/productApi';
 import productReducer from '../features/product/productSlice';
 
 jest.mock('../features/product/productApi');
+jest.mock('../features/auth/authApi');
 
 function renderWizard() {
-  const store = configureStore({ reducer: { product: productReducer, checkout: checkoutReducer } });
+  const store = configureStore({
+    reducer: { product: productReducer, checkout: checkoutReducer, auth: authReducer, navigation: navigationReducer },
+  });
   render(
     <Provider store={store}>
       <CheckoutWizard />
     </Provider>,
   );
+}
+
+async function goFromCatalogToCheckoutModal() {
+  await screen.findByText('Audífonos inalámbricos');
+  await userEvent.click(screen.getByText('Audífonos inalámbricos'));
+
+  await userEvent.click(screen.getAllByRole('button', { name: /pagar con tarjeta/i })[0]);
+
+  // No session yet — lands on Login; sign in to continue to the card/delivery modal.
+  await userEvent.type(screen.getByLabelText('Email'), 'jane@example.com');
+  await userEvent.type(screen.getByLabelText(/^Contraseña/), 'secret123');
+  await userEvent.click(screen.getByRole('button', { name: 'Iniciar sesión' }));
+
+  await screen.findByRole('dialog', { name: 'Datos de pago y entrega' });
 }
 
 async function fillCardAndDeliveryForm(cardNumber: string) {
@@ -41,15 +61,25 @@ describe('CheckoutWizard (integration)', () => {
         imageUrl: 'img.png',
       },
     ]);
+    (authApi.login as jest.Mock).mockResolvedValue({
+      token: 'signed-token',
+      user: { id: 'u-1', fullName: 'Jane Doe', email: 'jane@example.com', phone: '3001234567', documentId: '123', defaultAddress: null, defaultCity: null },
+    });
   });
 
-  it('completes the 5-step flow end to end on an approved payment', async () => {
+  it('browses the catalog and detail without a session, then signs in at "Pagar" to reach checkout', async () => {
     renderWizard();
 
-    await screen.findByText('Audífonos inalámbricos');
-    await userEvent.click(screen.getAllByRole('button', { name: /pagar con tarjeta/i })[0]);
+    expect(await screen.findByText('Productos')).toBeInTheDocument();
+    await userEvent.click(screen.getByText('Audífonos inalámbricos'));
 
-    expect(screen.getByRole('dialog', { name: 'Datos de pago y entrega' })).toBeInTheDocument();
+    expect((await screen.findAllByText('Te pediremos iniciar sesión antes de pagar.')).length).toBeGreaterThan(0);
+  });
+
+  it('completes the full flow end to end on an approved payment', async () => {
+    renderWizard();
+    await goFromCatalogToCheckoutModal();
+
     await fillCardAndDeliveryForm('4242424242424242'); // valid, even last digit → simulated approval
     await userEvent.click(screen.getByRole('button', { name: 'Revisar pago' }));
 
@@ -63,13 +93,12 @@ describe('CheckoutWizard (integration)', () => {
 
     expect(await screen.findByText('Stock actualizado: quedan 4 unidades.')).toBeInTheDocument();
     await waitFor(() => expect(screen.getByText('4 disponibles')).toBeInTheDocument());
-  }, 10000);
+  }, 15000);
 
   it('allows retrying with the summary kept after a declined payment', async () => {
     renderWizard();
+    await goFromCatalogToCheckoutModal();
 
-    await screen.findByText('Audífonos inalámbricos');
-    await userEvent.click(screen.getAllByRole('button', { name: /pagar con tarjeta/i })[0]);
     await fillCardAndDeliveryForm('4111111111111111'); // valid, odd last digit → simulated decline
     await userEvent.click(screen.getByRole('button', { name: 'Revisar pago' }));
 
@@ -83,5 +112,5 @@ describe('CheckoutWizard (integration)', () => {
     expect(screen.getByRole('dialog', { name: 'Datos de pago y entrega' })).toBeInTheDocument();
     expect(screen.getByLabelText('CVC')).toHaveValue('');
     expect(screen.getByLabelText('Nombre del titular')).toHaveValue('Jane Doe');
-  }, 10000);
+  }, 15000);
 });
