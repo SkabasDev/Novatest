@@ -35,16 +35,19 @@ async function goFromCatalogToCheckoutModal() {
   await userEvent.type(screen.getByLabelText(/^Contraseña/), 'secret123');
   await userEvent.click(screen.getByRole('button', { name: 'Iniciar sesión' }));
 
-  await screen.findByRole('dialog', { name: 'Datos de pago y entrega' });
+  await screen.findByText('Tarjeta y entrega');
 }
 
 async function fillCardAndDeliveryForm(cardNumber: string) {
   await userEvent.type(screen.getByLabelText('Número de tarjeta', { exact: false }), cardNumber);
+  // Cardholder and celular come prefilled from the session (Jane Doe / 3001234567) — clear first.
+  await userEvent.clear(screen.getByLabelText('Nombre del titular'));
   await userEvent.type(screen.getByLabelText('Nombre del titular'), 'Jane Doe');
   await userEvent.type(screen.getByLabelText('Vencimiento'), '1229');
   await userEvent.type(screen.getByLabelText('CVC'), '123');
   await userEvent.type(screen.getByLabelText('Dirección'), 'Calle 123 #45-67, apto 8');
   await userEvent.type(screen.getByLabelText('Ciudad'), 'Bogotá');
+  await userEvent.clear(screen.getByLabelText('Celular'));
   await userEvent.type(screen.getByLabelText('Celular'), '3001234567');
 }
 
@@ -109,7 +112,7 @@ describe('CheckoutWizard (integration)', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Reintentar pago' }));
 
-    expect(screen.getByRole('dialog', { name: 'Datos de pago y entrega' })).toBeInTheDocument();
+    expect(await screen.findByText('Tarjeta y entrega')).toBeInTheDocument();
     expect(screen.getByLabelText('CVC')).toHaveValue('');
     expect(screen.getByLabelText('Nombre del titular')).toHaveValue('Jane Doe');
   }, 15000);

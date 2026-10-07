@@ -5,9 +5,9 @@ import { Toast } from '../shared/ui/Toast';
 import { LoginScreen } from '../features/auth/components/LoginScreen';
 import { RegisterScreen } from '../features/auth/components/RegisterScreen';
 import { logout, setAuthIntent } from '../features/auth/authSlice';
-import { CreditCardModal } from '../features/checkout/components/CreditCardModal';
+import { CardDeliveryScreen } from '../features/checkout/components/CardDeliveryScreen';
 import { ResultScreen } from '../features/checkout/components/ResultScreen';
-import { SummaryBackdrop } from '../features/checkout/components/SummaryBackdrop';
+import { SummaryScreen } from '../features/checkout/components/SummaryScreen';
 import { BASE_FEE_IN_CENTS, DELIVERY_FEE_IN_CENTS } from '../features/checkout/constants';
 import {
   goToStep,
@@ -28,9 +28,10 @@ import { DetailScreen } from '../features/product/components/DetailScreen';
 const TOAST_DURATION_MS = 6000;
 
 /**
- * Top-level router: Catalog/Detail/Login/Register (free navigation, spec §11.1) sit under the
- * card-delivery modal, summary backdrop and result screen (the existing payment flow, gated by
- * `checkout.step`). Session is only required at "Pagar" — browsing and the catalog stay free.
+ * Top-level router. Catalog/Detail/Login/Register (free navigation, spec §11.1) and the payment
+ * flow (card-delivery/summary/result, spec §11.10-11.11 — full pages, not the v1 modal/backdrop)
+ * all render as the single main screen, switched on `checkout.step`/`navigation.screen`. Session
+ * is only required at "Pagar" — browsing and the catalog stay free.
  *
  * Full card data (PAN/CVC) lives only in this component's state, in memory — it is never
  * dispatched to Redux/localStorage, so a page refresh can never resurrect it.
@@ -57,7 +58,7 @@ export function CheckoutWizard() {
 
   useEffect(() => () => clearTimeout(toastTimeoutRef.current), []);
 
-  function handleModalSubmit(values: CheckoutFormValues) {
+  function handleCardDeliverySubmit(values: CheckoutFormValues) {
     if (!product) return;
     setCardValues(values);
 
@@ -113,7 +114,7 @@ export function CheckoutWizard() {
     <div className="min-h-screen bg-base">
       <Header
         currentStep={STEP_NUMBER[step]}
-        showStepper={step === 'result' || (!isCheckoutActive && screen === 'detail')}
+        showStepper={isCheckoutActive || screen === 'detail'}
         session={user ? { fullName: user.fullName, email: user.email } : null}
         onLogoClick={() => dispatch(goToCatalog())}
         onLoginClick={() => {
@@ -134,10 +135,24 @@ export function CheckoutWizard() {
             onRetry={() => dispatch(retryPayment())}
             onBackToStore={handleBackToStore}
           />
-        ) : isCheckoutActive ? (
-          // card-delivery/summary: the background stays the detail screen the purchase started from.
-          selectedProductId ? (
-            <DetailScreen productId={selectedProductId} onBack={() => dispatch(goToCatalog())} onPay={() => handlePay(selectedProductId)} />
+        ) : step === 'summary' && summary ? (
+          <SummaryScreen
+            summary={summary}
+            isProcessing={paymentStatus === 'processing'}
+            onBack={() => dispatch(goToStep('card-delivery'))}
+            onPay={() => cardValues && dispatch(submitPayment(cardValues.cardNumber))}
+            onEditData={() => dispatch(goToStep('card-delivery'))}
+          />
+        ) : step === 'card-delivery' ? (
+          product ? (
+            <CardDeliveryScreen
+              productName={product.name}
+              unitPriceInCents={product.priceInCents}
+              quantity={quantity}
+              onBack={() => dispatch(goToStep('product'))}
+              onSubmit={handleCardDeliverySubmit}
+              initialValues={cardValues ?? undefined}
+            />
           ) : (
             <CatalogScreen onSelectProduct={(productId) => dispatch(goToDetail(productId))} />
           )
@@ -160,24 +175,6 @@ export function CheckoutWizard() {
           <CatalogScreen onSelectProduct={(productId) => dispatch(goToDetail(productId))} />
         )}
       </main>
-
-      {step === 'card-delivery' && (
-        <CreditCardModal
-          onClose={() => dispatch(goToStep(summary ? 'summary' : 'product'))}
-          onSubmit={handleModalSubmit}
-          initialValues={cardValues ?? undefined}
-        />
-      )}
-
-      {step === 'summary' && summary && (
-        <SummaryBackdrop
-          summary={summary}
-          isProcessing={paymentStatus === 'processing'}
-          onPay={() => cardValues && dispatch(submitPayment(cardValues.cardNumber))}
-          onEditData={() => dispatch(goToStep('card-delivery'))}
-          onDismiss={() => dispatch(goToStep('card-delivery'))}
-        />
-      )}
     </div>
   );
 }
