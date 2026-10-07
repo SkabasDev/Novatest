@@ -6,6 +6,8 @@ export interface ProductDto {
   currency: string;
   stock: number;
   imageUrl: string;
+  /** Not yet modeled on the backend — optional so the UI degrades gracefully with a generic overline. */
+  category?: string;
 }
 
 export type TransactionStatus = 'PENDING' | 'APPROVED' | 'DECLINED' | 'ERROR';
