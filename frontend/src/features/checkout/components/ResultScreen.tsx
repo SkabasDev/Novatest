@@ -1,21 +1,25 @@
 import { AlertCircle, Check, Download } from 'lucide-react';
 import { Button } from '../../../shared/ui/Button';
 import { formatCurrency } from '../../../shared/utils/formatCurrency';
-import { CheckoutSummary, PaymentResult } from '../checkoutSlice';
+import { CheckoutSummary, PaymentResult, totalInCents } from '../checkoutSlice';
 import { downloadReceipt } from '../receipt';
 
 interface ResultScreenProps {
   summary: CheckoutSummary;
   result: PaymentResult;
   onRetry: () => void;
+  /** Approved only — clears the cart/decrements stock and returns to the catalog. */
   onBackToStore: () => void;
+  /** Declined only — just navigates back (cart or the product), nothing is cleared (spec §12.5/§12.7). */
+  onDeclinedBack: () => void;
+  /** "Volver al carrito" for a cart checkout, "Volver al producto" for buy-now (spec §12.5/§12.7). */
+  declinedBackLabel?: string;
 }
 
 /** Final status screen per spec §5.4 — approved and declined share the same data card, different copy/CTA. */
-export function ResultScreen({ summary, result, onRetry, onBackToStore }: ResultScreenProps) {
+export function ResultScreen({ summary, result, onRetry, onBackToStore, onDeclinedBack, declinedBackLabel = 'Volver al producto' }: ResultScreenProps) {
   const isApproved = result.status === 'APPROVED';
-  const subtotalInCents = summary.unitPriceInCents * summary.quantity;
-  const totalInCents = subtotalInCents + summary.baseFeeInCents + summary.deliveryFeeInCents;
+  const total = totalInCents(summary);
 
   return (
     <div className="mx-auto flex max-w-result flex-col items-center gap-4 px-4 py-8 text-center">
@@ -50,7 +54,7 @@ export function ResultScreen({ summary, result, onRetry, onBackToStore }: Result
       )}
 
       <dl className="w-full divide-y divide-line rounded border border-line bg-panel text-left text-[14px]">
-        <Row label={isApproved ? 'Total pagado' : 'Monto no cobrado'} value={formatCurrency(totalInCents)} />
+        <Row label={isApproved ? 'Total pagado' : 'Monto no cobrado'} value={formatCurrency(total)} />
         <Row label="Tarjeta" value={`${summary.cardBrand} •••• ${summary.cardLast4}`} />
         <Row label="N.º de transacción" valueClassName="font-mono text-[13px]" value={result.transactionReference} />
       </dl>
@@ -67,8 +71,8 @@ export function ResultScreen({ summary, result, onRetry, onBackToStore }: Result
       ) : (
         <>
           <Button onClick={onRetry}>Reintentar pago</Button>
-          <Button variant="secondary" onClick={onBackToStore}>
-            Volver al producto
+          <Button variant="secondary" onClick={onDeclinedBack}>
+            {declinedBackLabel}
           </Button>
         </>
       )}

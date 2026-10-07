@@ -4,10 +4,26 @@ import { useFocusTrap } from '../../../shared/hooks/useFocusTrap';
 import { Button } from '../../../shared/ui/Button';
 import { Stepper } from '../../../shared/ui/Stepper';
 import { formatCurrency } from '../../../shared/utils/formatCurrency';
-import { CheckoutSummary } from '../checkoutSlice';
+import { CardBrand } from '../validators/cardBrand';
+
+/**
+ * v1-only shape (a single product, no cart) — kept local on purpose so this component (merged
+ * as-is, superseded by SummaryScreen for v2/v3) doesn't depend on checkoutSlice's multi-line
+ * CheckoutSummary.
+ */
+interface SummaryBackdropSummary {
+  productName: string;
+  unitPriceInCents: number;
+  quantity: number;
+  baseFeeInCents: number;
+  deliveryFeeInCents: number;
+  delivery: { address: string; city: string; phone: string };
+  cardLast4: string;
+  cardBrand: CardBrand;
+}
 
 interface SummaryBackdropProps {
-  summary: CheckoutSummary;
+  summary: SummaryBackdropSummary;
   isProcessing: boolean;
   onPay: () => void;
   onEditData: () => void;

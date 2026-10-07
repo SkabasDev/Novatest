@@ -2,6 +2,7 @@ import { combineReducers, configureStore } from '@reduxjs/toolkit';
 import { FLUSH, PAUSE, PERSIST, PURGE, REGISTER, REHYDRATE, persistReducer, persistStore } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
 import authReducer from '../features/auth/authSlice';
+import cartReducer from '../features/cart/cartSlice';
 import checkoutReducer from '../features/checkout/checkoutSlice';
 import navigationReducer from '../features/navigation/navigationSlice';
 import productReducer from '../features/product/productSlice';
@@ -15,6 +16,7 @@ const rootReducer = combineReducers({
   checkout: checkoutReducer,
   auth: authReducer,
   navigation: navigationReducer,
+  cart: cartReducer,
 });
 
 const persistConfig = {
@@ -22,8 +24,9 @@ const persistConfig = {
   storage,
   // Never persist raw card data. The JWT is persisted (spec v2 §11.1: "en producción: JWT") so a
   // refresh doesn't log the user out — it's always revalidated against GET /auth/me on boot
-  // (never trusted blindly), same pattern already used for pending transactions.
-  whitelist: ['checkout', 'auth'] as string[],
+  // (never trusted blindly), same pattern already used for pending transactions. The cart
+  // persists too (spec §12.1: "en prototipo, localStorage").
+  whitelist: ['checkout', 'auth', 'cart'] as string[],
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

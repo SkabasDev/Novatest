@@ -55,4 +55,26 @@ describe('Header', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Nova' }));
     expect(onLogoClick).toHaveBeenCalledTimes(1);
   });
+
+  it('does not show a cart button when onCartClick is not given', () => {
+    render(<Header />);
+    expect(screen.queryByLabelText(/Carrito,/)).not.toBeInTheDocument();
+  });
+
+  it('shows the cart button with its badge and calls onCartClick', async () => {
+    const onCartClick = jest.fn();
+    render(<Header onCartClick={onCartClick} cartCount={3} />);
+
+    const cartButton = screen.getByLabelText('Carrito, 3 productos');
+    expect(cartButton).toHaveTextContent('3');
+
+    await userEvent.click(cartButton);
+    expect(onCartClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('hides the cart badge when the cart is empty', () => {
+    render(<Header onCartClick={jest.fn()} cartCount={0} />);
+    const cartButton = screen.getByLabelText('Carrito, 0 productos');
+    expect(cartButton).toHaveTextContent('');
+  });
 });

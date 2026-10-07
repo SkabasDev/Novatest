@@ -1,4 +1,4 @@
-import { Lock, LogOut } from 'lucide-react';
+import { Lock, LogOut, ShoppingCart } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Stepper } from './Stepper';
 
@@ -15,10 +15,13 @@ interface HeaderProps {
   onLogoClick?: () => void;
   onLoginClick?: () => void;
   onLogout?: () => void;
+  /** Total units across all cart lines — the button only renders when this callback is given (spec §12.2). */
+  cartCount?: number;
+  onCartClick?: () => void;
 }
 
-/** Sticky header shown on every screen (spec §4, extended by §11.2 with session). The modal/backdrop repeat their own stepper since they cover it. */
-export function Header({ currentStep, showStepper = true, session, onLogoClick, onLoginClick, onLogout }: HeaderProps) {
+/** Sticky header shown on every screen (spec §4, extended by §11.2 with session and §12.2 with the cart). The modal/backdrop repeat their own stepper since they cover it. */
+export function Header({ currentStep, showStepper = true, session, onLogoClick, onLoginClick, onLogout, cartCount = 0, onCartClick }: HeaderProps) {
   return (
     <header className="safe-top sticky top-0 z-30 border-b border-line bg-[rgba(246,248,252,0.95)] px-4 py-3 backdrop-blur-xl">
       <div className="mx-auto flex max-w-page items-center justify-between">
@@ -34,6 +37,21 @@ export function Header({ currentStep, showStepper = true, session, onLogoClick, 
             <Lock size={16} strokeWidth={1.75} aria-hidden="true" />
             Pago seguro
           </span>
+          {onCartClick && (
+            <button
+              type="button"
+              onClick={onCartClick}
+              aria-label={`Carrito, ${cartCount} productos`}
+              className="relative flex h-11 w-11 items-center justify-center text-fg-1 hover:bg-inset"
+            >
+              <ShoppingCart size={22} strokeWidth={1.75} aria-hidden="true" />
+              {cartCount > 0 && (
+                <span className="absolute right-0.5 top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1 text-[11px] font-bold text-white ring-2 ring-base">
+                  {cartCount}
+                </span>
+              )}
+            </button>
+          )}
           {session ? (
             <SessionMenu session={session} onLogout={onLogout} />
           ) : (

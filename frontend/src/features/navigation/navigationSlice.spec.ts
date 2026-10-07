@@ -1,4 +1,4 @@
-import navigationReducer, { goToCatalog, goToDetail, goToLogin, goToRegister } from './navigationSlice';
+import navigationReducer, { goToCart, goToCatalog, goToDetail, goToLogin, goToRegister } from './navigationSlice';
 
 describe('navigationSlice', () => {
   it('returns the initial state', () => {
@@ -14,6 +14,10 @@ describe('navigationSlice', () => {
   it('navigates to login and register', () => {
     expect(navigationReducer(undefined, goToLogin()).screen).toBe('login');
     expect(navigationReducer(undefined, goToRegister()).screen).toBe('register');
+  });
+
+  it('navigates to the cart', () => {
+    expect(navigationReducer(undefined, goToCart()).screen).toBe('cart');
   });
 
   it('navigates back to the catalog, keeping the last selected product id', () => {

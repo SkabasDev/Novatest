@@ -3,7 +3,6 @@ import { ChangeEvent, useState } from 'react';
 import { useAppSelector } from '../../../app/hooks';
 import { Button } from '../../../shared/ui/Button';
 import { Field } from '../../../shared/ui/Field';
-import { formatCurrency } from '../../../shared/utils/formatCurrency';
 import { detectCardBrand } from '../validators/cardBrand';
 import { CheckoutFieldName, CheckoutFormValues, VALIDATORS } from '../validators/validateField';
 import { formatCardHolder, formatCardNumber, formatCvc, formatExpiry, formatPhone } from '../format';
@@ -20,10 +19,11 @@ const TEST_CARD: CheckoutFormValues = {
 };
 
 interface CardDeliveryScreenProps {
-  productName: string;
-  unitPriceInCents: number;
-  quantity: number;
+  /** "‹ {producto}" for buy-now, "‹ Carrito" for a cart checkout (spec §11.11/§12.5). */
+  backLabel: string;
   onBack: () => void;
+  /** "{producto} × N · subtotal" (single line) or "N productos · subtotal" (cart) — computed by the caller. */
+  headerSummary: string;
   onSubmit: (values: CheckoutFormValues) => void;
   /** Retry flow: keeps everything except the CVC, which is always re-entered (spec §5.4/§12.5). */
   initialValues?: Partial<CheckoutFormValues>;
@@ -33,7 +33,7 @@ interface CardDeliveryScreenProps {
  * "Tarjeta y entrega" as a full page (spec v2 §11.11 — replaces the v1 modal, which stays
  * untouched for that version). Normal page scroll, sticky CTA on mobile, no overlay/focus-trap.
  */
-export function CardDeliveryScreen({ productName, unitPriceInCents, quantity, onBack, onSubmit, initialValues }: CardDeliveryScreenProps) {
+export function CardDeliveryScreen({ backLabel, headerSummary, onBack, onSubmit, initialValues }: CardDeliveryScreenProps) {
   const user = useAppSelector((state) => state.auth.user);
 
   const prefill: CheckoutFormValues = {
@@ -99,16 +99,14 @@ export function CardDeliveryScreen({ productName, unitPriceInCents, quantity, on
   return (
     <form onSubmit={handleSubmit} className="mx-auto flex max-w-sheet flex-col gap-6 px-4 py-6 pb-28 md:pb-6">
       <button type="button" onClick={onBack} className="min-h-11 self-start text-[14px] font-medium text-primary">
-        ‹ {productName}
+        {backLabel}
       </button>
 
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h1 className="font-display text-[28px] font-bold leading-[1.14] tracking-[-0.03em] text-fg-1">
           Tarjeta y entrega
         </h1>
-        <span className="text-[14px] text-fg-3">
-          {productName} × {quantity} · {formatCurrency(unitPriceInCents * quantity)}
-        </span>
+        <span className="text-[14px] text-fg-3">{headerSummary}</span>
       </div>
 
       {user && (
