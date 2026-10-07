@@ -3,18 +3,63 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: nova
-      POSTGRES_PASSWORD: nova
-      POSTGRES_DB: nova_checkout
+      POSTGRES_USER: ${DB_USERNAME:-nova}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-nova}
+      POSTGRES_DB: ${DB_NAME:-nova_checkout}
     ports:
       - "5432:5432"
     volumes:
       - nova_checkout_db:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U nova"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-nova}"]
       interval: 5s
       timeout: 5s
       retries: 5
 
+  # Backs the per-product distributed lock (shared-kernel/lock.module.ts) that serializes stock
+  # decrements across app instances, so two concurrent payments for the same product can't both
+  # read-then-write a stale stock count and oversell it.
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - nova_checkout_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 3000
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: ${DB_USERNAME:-nova}
+      DB_PASSWORD: ${DB_PASSWORD:-nova}
+      DB_NAME: ${DB_NAME:-nova_checkout}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      PAYMENT_GATEWAY_BASE_URL: ${PAYMENT_GATEWAY_BASE_URL:-https://sandbox.example-payment-provider.dev/v1}
+      PAYMENT_GATEWAY_PUBLIC_KEY: ${PAYMENT_GATEWAY_PUBLIC_KEY:-pub_sandbox_replace_me}
+      PAYMENT_GATEWAY_PRIVATE_KEY: ${PAYMENT_GATEWAY_PRIVATE_KEY:-prv_sandbox_replace_me}
+      BASE_FEE_IN_CENTS: ${BASE_FEE_IN_CENTS:-350000}
+      JWT_SECRET: ${JWT_SECRET:-replace_me_with_a_long_random_string_min_32_chars}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-2h}
+    ports:
+      - "3000:3000"
+
 volumes:
   nova_checkout_db:
+  nova_checkout_redis:

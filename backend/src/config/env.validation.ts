@@ -27,6 +27,12 @@ class EnvironmentVariables {
   @IsNotEmpty()
   DB_NAME!: string;
 
+  @IsNotEmpty()
+  REDIS_HOST!: string;
+
+  @IsInt()
+  REDIS_PORT = 6379;
+
   @IsUrl({ require_tld: false })
   PAYMENT_GATEWAY_BASE_URL!: string;
 
