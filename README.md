@@ -4,7 +4,7 @@ Checkout de un producto con pago por tarjeta de crédito: vitrina → datos de t
 
 Monorepo con dos apps independientes:
 
-- [`backend/`](./backend) — API REST en NestJS + TypeScript, Arquitectura Hexagonal (Ports & Adapters), Railway Oriented Programming (ROP), TypeORM + PostgreSQL.
+- [`backend/`](./backend) — API REST en NestJS + TypeScript, Arquitectura Hexagonal (Ports & Adapters), Railway Oriented Programming (ROP), TypeORM + PostgreSQL + Redis (bloqueo distribuido de stock).
 - [`frontend/`](./frontend) — SPA en React + TypeScript + Redux Toolkit + Tailwind CSS.
 
 Specs de arranque de cada capa: [`../FRONTEND.md`](../FRONTEND.md), [`../BACKEND.md`](../BACKEND.md), [`../DESIGN_CONTEXT.md`](../DESIGN_CONTEXT.md).
@@ -24,11 +24,20 @@ Specs de arranque de cada capa: [`../FRONTEND.md`](../FRONTEND.md), [`../BACKEND
 ```bash
 cd backend
 cp .env.example .env        # completar con las credenciales de la pasarela de pago sandbox
-docker compose up -d        # levanta PostgreSQL
+
+# Opción A — PostgreSQL + Redis en Docker, API local con hot-reload
+docker compose up -d postgres redis
 npm install
 npm run seed                # carga productos dummy
 npm run start:dev           # http://localhost:3000 — Swagger en /docs
+
+# Opción B — todo en Docker (PostgreSQL + Redis + API)
+docker compose up -d --build
 ```
+
+Redis respalda el bloqueo distribuido por producto (`shared-kernel/lock.module.ts`) que serializa el
+decremento de stock entre instancias de la API — sin él, dos pagos concurrentes del mismo producto
+podrían leer el mismo stock y sobrevenderlo. Ver [`BACKEND.md` §10](../BACKEND.md#10-infraestructura-como-código-y-despliegue) para el detalle.
 
 ### Frontend
 

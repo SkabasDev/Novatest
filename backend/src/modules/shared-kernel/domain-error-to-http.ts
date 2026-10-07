@@ -6,6 +6,9 @@ import {
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
+
+/** Not in Nest's HttpStatus enum (it stops at 429) — WebDAV's "Locked", reused for a held transaction lock. */
+const HTTP_LOCKED = 423;
 import { DomainError, DomainErrorCode } from './domain-error';
 
 /** Maps a domain-level error to the corresponding HTTP exception. Used only at controllers (the hexagon's edge). */
@@ -29,6 +32,8 @@ export function domainErrorToHttp(error: DomainError): HttpException {
     case DomainErrorCode.INVALID_CREDENTIALS:
     case DomainErrorCode.UNAUTHORIZED:
       return new UnauthorizedException(payload);
+    case DomainErrorCode.TRANSACTION_LOCKED:
+      return new HttpException(payload, HTTP_LOCKED);
     default:
       return new BadRequestException(payload);
   }
