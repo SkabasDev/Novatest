@@ -4,6 +4,7 @@ import {
   HttpException,
   NotFoundException,
   ServiceUnavailableException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { DomainError, DomainErrorCode } from './domain-error';
 
@@ -23,6 +24,11 @@ export function domainErrorToHttp(error: DomainError): HttpException {
       return new BadRequestException(payload);
     case DomainErrorCode.PAYMENT_GATEWAY_UNAVAILABLE:
       return new ServiceUnavailableException(payload);
+    case DomainErrorCode.EMAIL_ALREADY_EXISTS:
+      return new ConflictException(payload);
+    case DomainErrorCode.INVALID_CREDENTIALS:
+    case DomainErrorCode.UNAUTHORIZED:
+      return new UnauthorizedException(payload);
     default:
       return new BadRequestException(payload);
   }
