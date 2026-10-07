@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  body {
+    @apply bg-base;
+  }
+
+  /* Visible focus ring everywhere, replacing the default outline per spec §10. */
+  :focus-visible {
+    @apply outline-none ring-0 shadow-focus;
+  }
+
+  input:focus-visible,
+  button:focus-visible,
+  a:focus-visible {
+    @apply shadow-focus;
+  }
+
+  [aria-invalid='true']:focus-visible {
+    @apply shadow-focus-danger;
+  }
+}
+
+@layer utilities {
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
