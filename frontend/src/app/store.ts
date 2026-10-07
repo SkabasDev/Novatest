@@ -1,18 +1,23 @@
 import { combineReducers, configureStore } from '@reduxjs/toolkit';
 import { FLUSH, PAUSE, PERSIST, PURGE, REGISTER, REHYDRATE, persistReducer, persistStore } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
+import checkoutReducer from '../features/checkout/checkoutSlice';
+import productReducer from '../features/product/productSlice';
 
 /**
- * Feature slices are added to this root reducer incrementally, one per feature PR
- * (product, then checkout, then transaction) — see FRONTEND.md for the target shape.
+ * Feature slices are added to this root reducer incrementally, one per feature PR —
+ * see FRONTEND.md for the target shape. The transaction slice lands in a later PR.
  */
-const rootReducer = combineReducers({});
+const rootReducer = combineReducers({
+  product: productReducer,
+  checkout: checkoutReducer,
+});
 
 const persistConfig = {
   key: 'nova-checkout',
   storage,
-  // Never persist raw card data — only non-sensitive checkout metadata will be whitelisted here.
-  whitelist: [] as string[],
+  // Never persist raw card data — only non-sensitive checkout metadata is whitelisted here.
+  whitelist: ['checkout'] as string[],
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
