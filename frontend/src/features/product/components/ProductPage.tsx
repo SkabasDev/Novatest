@@ -13,8 +13,10 @@ export function ProductPage() {
   const quantity = useAppSelector((state) => state.checkout.quantity);
 
   useEffect(() => {
-    dispatch(fetchProducts());
-  }, [dispatch]);
+    // Guarded on 'idle' so remounting after checkout (back to the product screen) doesn't
+    // clobber the client-side optimistic stock update with a stale re-fetch.
+    if (status === 'idle') dispatch(fetchProducts());
+  }, [dispatch, status]);
 
   if (status === 'loading' || status === 'idle') {
     return <p className="p-6 text-center text-fg-3">Cargando producto…</p>;

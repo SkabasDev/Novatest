@@ -73,6 +73,12 @@ const checkoutSlice = createSlice({
     goToStep(state, action: PayloadAction<CheckoutStep>) {
       state.step = action.payload;
     },
+    /** "Reintentar pago": keeps the summary (so the modal can be pre-filled) and clears the outcome. */
+    retryPayment(state) {
+      state.step = 'card-delivery';
+      state.paymentStatus = 'idle';
+      state.result = null;
+    },
     resetCheckout() {
       return initialState;
     },
@@ -95,5 +101,6 @@ const checkoutSlice = createSlice({
   },
 });
 
-export const { setQuantity, startCheckout, setCheckoutSummary, goToStep, resetCheckout } = checkoutSlice.actions;
+export const { setQuantity, startCheckout, setCheckoutSummary, goToStep, retryPayment, resetCheckout } =
+  checkoutSlice.actions;
 export default checkoutSlice.reducer;

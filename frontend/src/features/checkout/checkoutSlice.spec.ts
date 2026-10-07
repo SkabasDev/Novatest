@@ -2,6 +2,7 @@ import checkoutReducer, {
   CheckoutSummary,
   goToStep,
   resetCheckout,
+  retryPayment,
   setCheckoutSummary,
   setQuantity,
   startCheckout,
@@ -58,6 +59,18 @@ describe('checkoutSlice', () => {
     expect(state.step).toBe('result');
     expect(state.paymentStatus).toBe('settled');
     expect(state.result).toEqual({ status: 'APPROVED', transactionReference: 'SIM-1' });
+  });
+
+  it('returns to card-delivery with a clean payment status on retry, keeping the summary', () => {
+    const settled = checkoutReducer(
+      checkoutReducer(undefined, setCheckoutSummary(summary)),
+      submitPayment.fulfilled({ status: 'DECLINED', transactionReference: 'SIM-1' }, 'req-1', '4242'),
+    );
+    const state = checkoutReducer(settled, retryPayment());
+    expect(state.step).toBe('card-delivery');
+    expect(state.paymentStatus).toBe('idle');
+    expect(state.result).toBeNull();
+    expect(state.summary).toEqual(summary);
   });
 
   it('allows navigating directly between steps', () => {
