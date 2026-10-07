@@ -1,5 +1,7 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { CurrentUser } from '../../../auth/infrastructure/http/current-user.decorator';
+import { OptionalAuthGuard } from '../../../auth/infrastructure/http/optional-auth.guard';
 import { domainErrorToHttp } from '../../../shared-kernel/domain-error-to-http';
 import { CreatePendingTransactionUseCase } from '../../application/use-cases/create-pending-transaction.use-case';
 import { GetTransactionStatusUseCase } from '../../application/use-cases/get-transaction-status.use-case';
@@ -18,9 +20,13 @@ export class TransactionController {
   ) {}
 
   @Post()
+  @UseGuards(OptionalAuthGuard)
   @ApiCreatedResponse({ type: TransactionResponseDto })
-  async create(@Body() dto: CreateTransactionDto): Promise<TransactionResponseDto> {
-    const result = await this.createPendingTransactionUseCase.execute(dto);
+  async create(
+    @Body() dto: CreateTransactionDto,
+    @CurrentUser() user: { id: string } | undefined,
+  ): Promise<TransactionResponseDto> {
+    const result = await this.createPendingTransactionUseCase.execute(dto, user?.id ?? null);
 
     return result.match(
       (transaction) => TransactionResponseDto.fromDomain(transaction),
