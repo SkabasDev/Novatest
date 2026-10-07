@@ -1,7 +1,7 @@
 import { CreditCard, MapPin } from 'lucide-react';
 import { Button } from '../../../shared/ui/Button';
 import { formatCurrency } from '../../../shared/utils/formatCurrency';
-import { CheckoutSummary } from '../checkoutSlice';
+import { CheckoutSummary, totalInCents } from '../checkoutSlice';
 
 interface SummaryScreenProps {
   summary: CheckoutSummary;
@@ -14,10 +14,10 @@ interface SummaryScreenProps {
 /**
  * "Resumen de pago" as a full page (spec v2 §11.10 — replaces the v1 backdrop, which stays
  * untouched for that version). No collapse/expand state; normal page scroll; sticky CTA on mobile.
+ * One row per cart line (spec §12.5) — a single-line summary (buy-now) still renders as one row.
  */
 export function SummaryScreen({ summary, isProcessing, onBack, onPay, onEditData }: SummaryScreenProps) {
-  const subtotalInCents = summary.unitPriceInCents * summary.quantity;
-  const totalInCents = subtotalInCents + summary.baseFeeInCents + summary.deliveryFeeInCents;
+  const total = totalInCents(summary);
 
   return (
     <div className="mx-auto flex max-w-sheet flex-col gap-6 px-4 py-6 pb-28 md:pb-6">
@@ -37,7 +37,13 @@ export function SummaryScreen({ summary, isProcessing, onBack, onPay, onEditData
         )}
 
         <dl className="flex flex-col gap-2.5 text-[15px]">
-          <Row label={`${summary.productName} × ${summary.quantity}`} value={formatCurrency(subtotalInCents)} />
+          {summary.lines.map((line) => (
+            <Row
+              key={line.productId}
+              label={`${line.productName} × ${line.quantity}`}
+              value={formatCurrency(line.unitPriceInCents * line.quantity)}
+            />
+          ))}
           <Row label="Tarifa base" value={formatCurrency(summary.baseFeeInCents)} />
           <Row label="Envío" value={formatCurrency(summary.deliveryFeeInCents)} />
         </dl>
@@ -46,7 +52,7 @@ export function SummaryScreen({ summary, isProcessing, onBack, onPay, onEditData
 
         <div className="flex items-center justify-between">
           <span className="text-[15px] text-fg-2">Total a pagar</span>
-          <span className="font-display text-total font-bold text-fg-1 tabular">{formatCurrency(totalInCents)}</span>
+          <span className="font-display text-total font-bold text-fg-1 tabular">{formatCurrency(total)}</span>
         </div>
       </div>
 
@@ -75,7 +81,7 @@ export function SummaryScreen({ summary, isProcessing, onBack, onPay, onEditData
 
       <div className="safe-bottom fixed inset-x-0 bottom-0 z-20 border-t border-line bg-base p-3 md:static md:border-0 md:p-0">
         <Button size="large" isLoading={isProcessing} loadingText="Procesando pago…" onClick={onPay}>
-          🔒 Pagar {formatCurrency(totalInCents)}
+          🔒 Pagar {formatCurrency(total)}
         </Button>
         {isProcessing ? (
           <p aria-live="polite" className="mt-2 text-center text-caption text-fg-3">

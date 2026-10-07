@@ -29,7 +29,7 @@ describe('LoginScreen', () => {
     render(
       <Provider store={store}>
         <LoginScreen
-          pendingSummary={{ productName: 'Audífonos', quantity: 2, subtotalInCents: 300000 }}
+          pendingSummary={{ label: 'Audífonos × 2', subtotalInCents: 300000 }}
           backLabel="‹ Audífonos"
           onBack={jest.fn()}
           onNavigateToRegister={jest.fn()}

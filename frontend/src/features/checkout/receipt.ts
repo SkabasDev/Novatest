@@ -1,15 +1,12 @@
-import { CheckoutSummary, PaymentResult } from './checkoutSlice';
+import { CheckoutSummary, PaymentResult, subtotalInCents, totalInCents } from './checkoutSlice';
 import { formatCurrency } from '../../shared/utils/formatCurrency';
 
 /**
  * Builds and triggers the download of a plain-text receipt. Stands in for a real PDF — the
- * content (transaction number, date, masked card, holder, delivery, breakdown, total) matches
- * what spec §5.4 asks for; only the file format is a placeholder.
+ * content (transaction number, date, masked card, holder, delivery, one row per line + subtotal,
+ * total) matches what spec §5.4/§12.5 asks for; only the file format is a placeholder.
  */
 export function downloadReceipt(summary: CheckoutSummary, result: PaymentResult): void {
-  const subtotalInCents = summary.unitPriceInCents * summary.quantity;
-  const totalInCents = subtotalInCents + summary.baseFeeInCents + summary.deliveryFeeInCents;
-
   const lines = [
     'Comprobante de pago',
     '====================',
@@ -17,10 +14,11 @@ export function downloadReceipt(summary: CheckoutSummary, result: PaymentResult)
     `N.º de transacción: ${result.transactionReference}`,
     `Tarjeta: ${summary.cardBrand} •••• ${summary.cardLast4}`,
     '',
-    `${summary.productName} × ${summary.quantity}: ${formatCurrency(subtotalInCents)}`,
+    ...summary.lines.map((line) => `${line.productName} × ${line.quantity}: ${formatCurrency(line.unitPriceInCents * line.quantity)}`),
+    `Subtotal: ${formatCurrency(subtotalInCents(summary))}`,
     `Tarifa base: ${formatCurrency(summary.baseFeeInCents)}`,
     `Envío: ${formatCurrency(summary.deliveryFeeInCents)}`,
-    `Total pagado: ${formatCurrency(totalInCents)}`,
+    `Total pagado: ${formatCurrency(totalInCents(summary))}`,
     '',
     `Entrega: ${summary.delivery.address}, ${summary.delivery.city}`,
     `Celular: ${summary.delivery.phone}`,

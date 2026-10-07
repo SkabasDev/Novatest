@@ -5,14 +5,18 @@ import checkoutReducer, {
   retryPayment,
   setCheckoutSummary,
   setQuantity,
-  startCheckout,
+  startBuyNow,
+  startCartCheckout,
+  subtotalInCents,
   submitPayment,
+  totalInCents,
 } from './checkoutSlice';
 
 const summary: CheckoutSummary = {
-  productName: 'Audífonos',
-  unitPriceInCents: 150000,
-  quantity: 1,
+  lines: [
+    { productId: 'p-1', productName: 'Audífonos', unitPriceInCents: 150000, quantity: 2 },
+    { productId: 'p-2', productName: 'Teclado', unitPriceInCents: 90000, quantity: 1 },
+  ],
   baseFeeInCents: 300000,
   deliveryFeeInCents: 1200000,
   delivery: { address: 'Calle 1', city: 'Bogotá', phone: '3001234567' },
@@ -24,7 +28,8 @@ describe('checkoutSlice', () => {
   it('returns the initial state', () => {
     expect(checkoutReducer(undefined, { type: 'unknown' })).toEqual({
       step: 'product',
-      productId: null,
+      source: 'cart',
+      buyNowProductId: null,
       quantity: 1,
       summary: null,
       paymentStatus: 'idle',
@@ -32,17 +37,27 @@ describe('checkoutSlice', () => {
     });
   });
 
-  it('moves to card-delivery and stores the product id when checkout starts', () => {
-    const state = checkoutReducer(undefined, startCheckout('p-1'));
+  it('starts a buy-now checkout for a single product', () => {
+    const state = checkoutReducer(undefined, startBuyNow({ productId: 'p-1', quantity: 3 }));
     expect(state.step).toBe('card-delivery');
-    expect(state.productId).toBe('p-1');
+    expect(state.source).toBe('buy-now');
+    expect(state.buyNowProductId).toBe('p-1');
+    expect(state.quantity).toBe(3);
+  });
+
+  it('starts a cart checkout, clearing any buy-now product', () => {
+    const buyNow = checkoutReducer(undefined, startBuyNow({ productId: 'p-1', quantity: 3 }));
+    const state = checkoutReducer(buyNow, startCartCheckout());
+    expect(state.step).toBe('card-delivery');
+    expect(state.source).toBe('cart');
+    expect(state.buyNowProductId).toBeNull();
   });
 
   it('clamps quantity to a minimum of 1', () => {
     expect(checkoutReducer(undefined, setQuantity(0)).quantity).toBe(1);
   });
 
-  it('moves to summary and stores the summary data', () => {
+  it('moves to summary and stores the multi-line summary data', () => {
     const state = checkoutReducer(undefined, setCheckoutSummary(summary));
     expect(state.step).toBe('summary');
     expect(state.summary).toEqual(summary);
@@ -78,9 +93,19 @@ describe('checkoutSlice', () => {
   });
 
   it('resets to the initial state', () => {
-    const dirty = checkoutReducer(undefined, startCheckout('p-1'));
+    const dirty = checkoutReducer(undefined, startBuyNow({ productId: 'p-1', quantity: 2 }));
     const state = checkoutReducer(dirty, resetCheckout());
     expect(state.step).toBe('product');
-    expect(state.productId).toBeNull();
+    expect(state.buyNowProductId).toBeNull();
+  });
+});
+
+describe('subtotalInCents / totalInCents', () => {
+  it('sums every line for the subtotal', () => {
+    expect(subtotalInCents(summary)).toBe(150000 * 2 + 90000 * 1);
+  });
+
+  it('adds base fee and delivery fee on top of the subtotal for the total', () => {
+    expect(totalInCents(summary)).toBe(150000 * 2 + 90000 * 1 + 300000 + 1200000);
   });
 });

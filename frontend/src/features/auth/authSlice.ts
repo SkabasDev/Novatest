@@ -1,14 +1,15 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import { authApi, LoginPayload, RegisterPayload, UserProfile } from './authApi';
 
-export type AuthIntent = 'direct' | { pendingProductId: string };
+/** 'pendingCart' is set when "Pagar" was clicked from the Cart screen (spec §12.1/§12.5). */
+export type AuthIntent = 'direct' | { pendingProductId: string } | 'pendingCart';
 
 interface AuthState {
   user: UserProfile | null;
   token: string | null;
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: string | null;
-  /** Where "Ingresar"/"Pagar" sent the user — drives where login/register redirect back to (spec §11.1). */
+  /** Where "Ingresar"/"Pagar" sent the user — drives where login/register redirect back to (spec §11.1/§12.1). */
   intent: AuthIntent;
 }
 

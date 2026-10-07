@@ -1,9 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { CheckoutSummary } from '../checkoutSlice';
 import { SummaryBackdrop } from './SummaryBackdrop';
 
-const summary: CheckoutSummary = {
+const summary = {
   productName: 'Audífonos',
   unitPriceInCents: 150_000_00,
   quantity: 2,
@@ -11,7 +10,7 @@ const summary: CheckoutSummary = {
   deliveryFeeInCents: 1_200_000,
   delivery: { address: 'Calle 123', city: 'Bogotá', phone: '3001234567' },
   cardLast4: '4242',
-  cardBrand: 'VISA',
+  cardBrand: 'VISA' as const,
 };
 
 describe('SummaryBackdrop', () => {

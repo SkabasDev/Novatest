@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-export type Screen = 'catalog' | 'detail' | 'login' | 'register';
+export type Screen = 'catalog' | 'detail' | 'login' | 'register' | 'cart';
 
 interface NavigationState {
   screen: Screen;
@@ -29,8 +29,11 @@ const navigationSlice = createSlice({
     goToRegister(state) {
       state.screen = 'register';
     },
+    goToCart(state) {
+      state.screen = 'cart';
+    },
   },
 });
 
-export const { goToCatalog, goToDetail, goToLogin, goToRegister } = navigationSlice.actions;
+export const { goToCatalog, goToDetail, goToLogin, goToRegister, goToCart } = navigationSlice.actions;
 export default navigationSlice.reducer;

@@ -22,7 +22,7 @@ function renderWithStore(authUser: typeof user | null = user) {
   });
   render(
     <Provider store={store}>
-      <CardDeliveryScreen productName="Audífonos" unitPriceInCents={150000} quantity={2} onBack={jest.fn()} onSubmit={jest.fn()} />
+      <CardDeliveryScreen backLabel="‹ Audífonos" headerSummary="Audífonos × 2 · $ 3.000" onBack={jest.fn()} onSubmit={jest.fn()} />
     </Provider>,
   );
 }
@@ -41,7 +41,7 @@ async function fillValidForm() {
 }
 
 describe('CardDeliveryScreen', () => {
-  it('renders as a normal page (no dialog role) with the product summary in the header', () => {
+  it('renders as a normal page (no dialog role) with the summary in the header', () => {
     renderWithStore();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(screen.getByText('Audífonos × 2 · $ 3.000')).toBeInTheDocument();
@@ -64,16 +64,16 @@ describe('CardDeliveryScreen', () => {
     expect(screen.queryByText('Desde tu perfil · puedes cambiarla')).not.toBeInTheDocument();
   });
 
-  it('calls onBack with the product label', async () => {
+  it('calls onBack with the given back label', async () => {
     const onBack = jest.fn();
     const store = configureStore({ reducer: { auth: authReducer } });
     render(
       <Provider store={store}>
-        <CardDeliveryScreen productName="Audífonos" unitPriceInCents={150000} quantity={1} onBack={onBack} onSubmit={jest.fn()} />
+        <CardDeliveryScreen backLabel="‹ Carrito" headerSummary="2 productos · $ 3.000" onBack={onBack} onSubmit={jest.fn()} />
       </Provider>,
     );
 
-    await userEvent.click(screen.getByRole('button', { name: '‹ Audífonos' }));
+    await userEvent.click(screen.getByRole('button', { name: '‹ Carrito' }));
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 
@@ -82,7 +82,7 @@ describe('CardDeliveryScreen', () => {
     const store = configureStore({ reducer: { auth: authReducer } });
     render(
       <Provider store={store}>
-        <CardDeliveryScreen productName="Audífonos" unitPriceInCents={150000} quantity={1} onBack={jest.fn()} onSubmit={onSubmit} />
+        <CardDeliveryScreen backLabel="‹ Audífonos" headerSummary="Audífonos × 1 · $ 1.500" onBack={jest.fn()} onSubmit={onSubmit} />
       </Provider>,
     );
 
@@ -105,7 +105,7 @@ describe('CardDeliveryScreen', () => {
     const store = configureStore({ reducer: { auth: authReducer } });
     render(
       <Provider store={store}>
-        <CardDeliveryScreen productName="Audífonos" unitPriceInCents={150000} quantity={1} onBack={jest.fn()} onSubmit={onSubmit} />
+        <CardDeliveryScreen backLabel="‹ Audífonos" headerSummary="Audífonos × 1 · $ 1.500" onBack={jest.fn()} onSubmit={onSubmit} />
       </Provider>,
     );
 

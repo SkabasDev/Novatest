@@ -11,21 +11,37 @@ export const STEP_NUMBER: Record<CheckoutStep, number> = {
   result: 4,
 };
 
+/** Where this checkout came from — drives back-navigation and what gets cleared on approval (spec §12.5/§12.7). */
+export type CheckoutSource = 'cart' | 'buy-now';
+
 export interface DeliveryInfo {
   address: string;
   city: string;
   phone: string;
 }
 
-export interface CheckoutSummary {
+export interface CheckoutLine {
+  productId: string;
   productName: string;
   unitPriceInCents: number;
   quantity: number;
+}
+
+export interface CheckoutSummary {
+  lines: CheckoutLine[];
   baseFeeInCents: number;
   deliveryFeeInCents: number;
   delivery: DeliveryInfo;
   cardLast4: string;
   cardBrand: CardBrand;
+}
+
+export function subtotalInCents(summary: Pick<CheckoutSummary, 'lines'>): number {
+  return summary.lines.reduce((sum, line) => sum + line.unitPriceInCents * line.quantity, 0);
+}
+
+export function totalInCents(summary: CheckoutSummary): number {
+  return subtotalInCents(summary) + summary.baseFeeInCents + summary.deliveryFeeInCents;
 }
 
 export interface PaymentResult {
@@ -35,7 +51,10 @@ export interface PaymentResult {
 
 interface CheckoutState {
   step: CheckoutStep;
-  productId: string | null;
+  source: CheckoutSource;
+  /** Only set for "Comprar ahora" — the single product it bypasses the cart for (spec §12.7). */
+  buyNowProductId: string | null;
+  /** Detail page's quantity selector; also the quantity captured for "Comprar ahora". */
   quantity: number;
   summary: CheckoutSummary | null;
   paymentStatus: 'idle' | 'processing' | 'settled';
@@ -44,7 +63,8 @@ interface CheckoutState {
 
 const initialState: CheckoutState = {
   step: 'product',
-  productId: null,
+  source: 'cart',
+  buyNowProductId: null,
   quantity: 1,
   summary: null,
   paymentStatus: 'idle',
@@ -62,8 +82,17 @@ const checkoutSlice = createSlice({
     setQuantity(state, action: PayloadAction<number>) {
       state.quantity = Math.max(1, action.payload);
     },
-    startCheckout(state, action: PayloadAction<string>) {
-      state.productId = action.payload;
+    /** "Comprar ahora" — pays for a single product/quantity, skipping the cart entirely (spec §12.7). */
+    startBuyNow(state, action: PayloadAction<{ productId: string; quantity: number }>) {
+      state.source = 'buy-now';
+      state.buyNowProductId = action.payload.productId;
+      state.quantity = action.payload.quantity;
+      state.step = 'card-delivery';
+    },
+    /** Pays for everything currently in the cart (spec §12.1/§12.4). */
+    startCartCheckout(state) {
+      state.source = 'cart';
+      state.buyNowProductId = null;
       state.step = 'card-delivery';
     },
     setCheckoutSummary(state, action: PayloadAction<CheckoutSummary>) {
@@ -73,7 +102,7 @@ const checkoutSlice = createSlice({
     goToStep(state, action: PayloadAction<CheckoutStep>) {
       state.step = action.payload;
     },
-    /** "Reintentar pago": keeps the summary (so the modal can be pre-filled) and clears the outcome. */
+    /** "Reintentar pago": keeps the summary (so the screen can be pre-filled) and clears the outcome. */
     retryPayment(state) {
       state.step = 'card-delivery';
       state.paymentStatus = 'idle';
@@ -101,6 +130,13 @@ const checkoutSlice = createSlice({
   },
 });
 
-export const { setQuantity, startCheckout, setCheckoutSummary, goToStep, retryPayment, resetCheckout } =
-  checkoutSlice.actions;
+export const {
+  setQuantity,
+  startBuyNow,
+  startCartCheckout,
+  setCheckoutSummary,
+  goToStep,
+  retryPayment,
+  resetCheckout,
+} = checkoutSlice.actions;
 export default checkoutSlice.reducer;
